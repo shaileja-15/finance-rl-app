@@ -158,3 +158,32 @@ if st.button("Analyze My Finances"):
             f"Reducing {best_action} provides the highest net financial benefit "
             "without heavily impacting essential living expenses."
         )
+                st.markdown("---")
+        st.markdown("## 📚 Optimal Policy Evaluation Table")
+
+        policy_data = []
+
+        for category, values in results.items():
+            policy_data.append([
+                category,
+                round(values["new_rate"] * 100, 2),
+                round(values["improvement"] * 100, 2),
+                round(values["reward"], 4)
+            ])
+
+        # Sort by reward descending
+        policy_data.sort(key=lambda x: x[3], reverse=True)
+
+        st.table(
+            [["Action",
+              "New Savings Rate (%)",
+              "Improvement (%)",
+              "Reward Score"]] + policy_data
+        )
+
+        st.markdown("### 🏆 Optimal Policy Selected")
+
+        st.success(
+            f"Best Action: **{best_action}**\n\n"
+            f"Highest Reward Score: {round(best_values['reward'],4)}"
+        )
