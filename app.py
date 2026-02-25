@@ -37,7 +37,8 @@ with col7:
 with col8:
     medical = st.number_input("Medical (₹)", min_value=0)
 
-# ================= EVALUATION =================
+
+# ================= EVALUATION ENGINE =================
 
 def evaluate_actions(income, fixed, variable):
 
@@ -76,6 +77,8 @@ def evaluate_actions(income, fixed, variable):
     return current_rate, results
 
 
+# ================= MAIN BUTTON =================
+
 if st.button("Analyze My Finances"):
 
     fixed = rent + emi
@@ -103,6 +106,16 @@ if st.button("Analyze My Finances"):
     m3.metric("Net Savings", f"₹{savings}")
     m4.metric("Savings Rate", f"{round(savings_rate*100,2)}%")
 
+    # ================= HEALTH SCORE =================
+
+    health_score = min(max(int(savings_rate * 200), 0), 100)
+
+    st.markdown("### Financial Health Score")
+    st.progress(health_score)
+    st.write(f"Score: {health_score}/100")
+
+    # ================= EXPENSE BREAKDOWN =================
+
     st.markdown("## 📊 Expense Breakdown (% of Income)")
 
     for k, v in variable.items():
@@ -110,14 +123,15 @@ if st.button("Analyze My Finances"):
             percent = round((v / income) * 100, 2)
             st.write(f"{k}: {percent}%")
 
-    # 🚨 SHOCK ALERT
+    # ================= SHOCK IMPACT =================
+
     if savings < 0:
         st.error(f"🚨 You are losing ₹{abs(savings)} per month!")
     else:
-        yearly_loss = savings * 12
-        st.info(f"💰 If you maintain this savings rate, you will save ₹{yearly_loss} in 1 year.")
+        yearly_savings = savings * 12
+        st.info(f"💰 At this rate, you will save ₹{yearly_savings} in 1 year.")
 
-    # ================= OPTIMAL DECISION =================
+    # ================= OPTIMAL POLICY EVALUATION =================
 
     current_rate, results = evaluate_actions(income, fixed, variable)
 
@@ -135,30 +149,27 @@ if st.button("Analyze My Finances"):
 
         st.success(
             f"Cut **{best_action}** by 10%.\n\n"
-            f"Your savings rate will increase from {round(current_rate*100,2)}% "
+            f"Savings Rate improves from {round(current_rate*100,2)}% "
             f"to {new_rate_percent}%.\n\n"
-            f"That's an improvement of {improvement_percent}% instantly."
+            f"Immediate Improvement: {improvement_percent}%"
         )
 
-        st.markdown("### 💥 Impact Visualization")
+        # ================= YEARLY IMPACT =================
 
         old_year = savings * 12
-        new_year = (income - (fixed + sum(variable.values()) - (0.1 * variable[best_action]))) * 12
+        projected_variable = variable.copy()
+        projected_variable[best_action] *= 0.9
+        new_year = (income - (fixed + sum(projected_variable.values()))) * 12
+
+        st.markdown("### 💥 Financial Impact Projection")
 
         st.write(f"Current Yearly Savings: ₹{old_year}")
         st.write(f"After Optimization: ₹{int(new_year)}")
         st.write(f"Extra Money Gained in 1 Year: ₹{int(new_year - old_year)}")
 
-        st.markdown("---")
-        st.markdown("### 🧠 Why This Action?")
+        # ================= POLICY TABLE =================
 
-        st.write(
-            "The system evaluates each possible expense reduction and calculates "
-            "a reward based on savings improvement and financial stability. "
-            f"Reducing {best_action} provides the highest net financial benefit "
-            "without heavily impacting essential living expenses."
-        )
-                st.markdown("---")
+        st.markdown("---")
         st.markdown("## 📚 Optimal Policy Evaluation Table")
 
         policy_data = []
@@ -171,7 +182,6 @@ if st.button("Analyze My Finances"):
                 round(values["reward"], 4)
             ])
 
-        # Sort by reward descending
         policy_data.sort(key=lambda x: x[3], reverse=True)
 
         st.table(
@@ -186,4 +196,15 @@ if st.button("Analyze My Finances"):
         st.success(
             f"Best Action: **{best_action}**\n\n"
             f"Highest Reward Score: {round(best_values['reward'],4)}"
+        )
+
+        # ================= EXPLANATION =================
+
+        st.markdown("### 🧠 Why This Action?")
+
+        st.write(
+            "Each possible expense reduction is evaluated using a weighted reward function "
+            "based on savings improvement and essential expense penalties. "
+            f"The action '{best_action}' produces the highest net financial reward "
+            "while maintaining financial stability."
         )
